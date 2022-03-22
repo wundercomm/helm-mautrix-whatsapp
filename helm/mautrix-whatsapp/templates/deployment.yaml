@@ -27,9 +27,20 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # command: [ "/bin/bash", "-c", "--" ]
+          # args: [ "while true; do sleep 60; done;" ]
+          command: 
+           - /usr/bin/mautrix-whatsapp
+          args:
+            - --registration 
+            - /bridges/mautrix-whatsapp/registration/registration.yaml
+            - --config
+            - /bridges/mautrix-whatsapp/config/config.yaml
           volumeMounts:
-            - mountPath: /data
-              name: config-volume
+            - mountPath: /bridges/mautrix-whatsapp/config/
+              name: mautrix-whatsapp-config
+            - mountPath: /bridges/mautrix-whatsapp/registration/
+              name: mautrix-whatsapp-registration
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -49,10 +60,14 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: config-volume
-          configMap:
-            name: {{ template "mautrix-whatsapp.fullname" . }}
-
+        - name: mautrix-whatsapp-registration
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.mautrixWhatsapp.registration.secretName }}
+        - name: mautrix-whatsapp-config
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.mautrixWhatsapp.config.secretName }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- with .Values.nodeSelector }}
